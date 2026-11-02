@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dashboard · GST Reconciliation</title><link rel="stylesheet" th:href="@{/styles.css}"><link rel="stylesheet" th:href="@{/readability.css(v=3)}"></head>
+<body>
+<header class="topbar"><a class="brand" th:href="@{/dashboard}">GST Reconciliation</a><nav class="nav-actions"><a class="active" th:href="@{/dashboard}">Dashboard</a><a th:href="@{/history}">Run history</a><a th:if="${canUpload}" th:href="@{/}">New reconciliation</a><a th:if="${canManageUsers}" th:href="@{/admin/users}">Users</a><span class="user-chip" th:text="${currentUser}"></span><form method="post" th:action="@{/logout}"><button class="link-button" type="submit">Sign out</button></form></nav></header>
+<main class="dashboard-container">
+  <section class="dashboard-heading"><div><p class="eyebrow">GST FINANCE OVERVIEW</p><h1>Reconciliation dashboard</h1><p class="muted" th:if="${canViewAll}">Overview across saved reconciliation runs.</p><p class="muted" th:unless="${canViewAll}">Your reconciliation activity and latest results.</p></div><a th:if="${canUpload}" class="button" th:href="@{/}">＋ New run</a></section>
+  <section class="metric-grid">
+    <article class="metric-card metric-total"><div class="metric-icon">▦</div><span>Invoices in latest run</span><strong th:text="${dashboard.totalInvoices}">0</strong><small>Books + portal records</small></article>
+    <article class="metric-card"><div class="metric-icon mint">✓</div><span>Matched</span><strong th:text="${dashboard.matched}">0</strong><small>Invoices reconciled</small></article>
+    <article class="metric-card"><div class="metric-icon amber-icon">≠</div><span>Mismatches</span><strong th:text="${dashboard.mismatch}">0</strong><small>Amount differences to review</small></article>
+    <article class="metric-card"><div class="metric-icon rose-icon">!</div><span>Missing invoices</span><strong th:text="${dashboard.missingInGst + dashboard.missingInBooks}">0</strong><small th:text="${dashboard.missingInGst + ' in GST · ' + dashboard.missingInBooks + ' in Books'}">0 in GST · 0 in Books</small></article>
+    <article class="metric-card metric-risk"><div class="metric-icon rose-icon">₹</div><span>ITC at risk</span><strong th:text="${#numbers.formatDecimal(dashboard.itcAtRisk,1,'COMMA',2,'POINT')}">0.00</strong><small>Latest run estimate</small></article>
+  </section>
+  <section class="dashboard-grid">
+    <article class="panel chart-panel"><div class="section-heading"><div><h2>Reconciliation trends</h2><p class="muted">Status counts across your 10 most recent runs</p></div><span class="chart-legend"><i></i> Matched <i class="legend-amber"></i> Mismatch</span></div><div class="chart-wrap"><canvas id="trendChart" aria-label="Reconciliation counts across recent runs"></canvas><p class="empty-chart" th:if="${#lists.isEmpty(dashboard.recentRuns)}">Run a reconciliation to see trends.</p></div></article>
+    <article class="panel status-panel"><div class="section-heading"><div><h2>Latest run</h2><p class="muted" th:if="${!#lists.isEmpty(dashboard.recentRuns)}" th:text="${#temporals.format(dashboard.recentRuns[0].runTime,'MMM d, yyyy · HH:mm')}"></p><p class="muted" th:if="${#lists.isEmpty(dashboard.recentRuns)}">No saved runs yet</p></div></div><div class="status-row"><span><i class="dot green-dot"></i>Matched</span><strong th:text="${dashboard.matched}">0</strong></div><div class="status-row"><span><i class="dot amber-dot"></i>Mismatch</span><strong th:text="${dashboard.mismatch}">0</strong></div><div class="status-row"><span><i class="dot red-dot"></i>Missing in GST</span><strong th:text="${dashboard.missingInGst}">0</strong></div><div class="status-row"><span><i class="dot blue-dot"></i>Missing in Books</span><strong th:text="${dashboard.missingInBooks}">0</strong></div><a th:if="${!#lists.isEmpty(dashboard.recentRuns)}" class="text-link" th:href="@{/history/{id}(id=${dashboard.recentRuns[0].id})}">View latest report →</a></article>
+  </section>
+  <section class="panel recent-panel"><div class="section-heading"><div><h2>Recent reconciliations</h2><p class="muted">Review recent uploads and open their reports.</p></div><a class="text-link" th:href="@{/history}">Full history →</a></div><div class="table-wrap"><table><thead><tr><th>Run</th><th>Date</th><th>Purchase register</th><th>GSTR-2B file</th><th>Matched</th><th>Mismatch</th><th>Missing in GST</th><th>ITC at risk</th><th></th></tr></thead><tbody><tr th:each="run : ${dashboard.recentRuns}"><td class="run-id" th:text="${'#' + run.id}"></td><td th:text="${#temporals.format(run.runTime,'MMM d, yyyy HH:mm')}"></td><td th:text="${run.booksFile}"></td><td th:text="${run.portalFile}"></td><td th:text="${run.totalMatched}"></td><td th:text="${run.totalMismatch}"></td><td th:text="${run.missingInGst}"></td><td th:text="${#numbers.formatDecimal(run.itcAtRisk,1,'COMMA',2,'POINT')}"></td><td><a th:href="@{/history/{id}(id=${run.id})}">View</a></td></tr><tr th:if="${#lists.isEmpty(dashboard.recentRuns)}"><td colspan="9" class="muted">No reconciliation runs yet.</td></tr></tbody></table></div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:inline="javascript">
+const trendLabels = [[${dashboard.trendLabels}]];
+const matchedTrend = [[${dashboard.matchedTrend}]];
+const mismatchTrend = [[${dashboard.mismatchTrend}]];
+const missingGstTrend = [[${dashboard.missingInGstTrend}]];
+const missingBooksTrend = [[${dashboard.missingInBooksTrend}]];
+const chartCanvas = document.getElementById('trendChart');
+if (chartCanvas && window.Chart && trendLabels.length) {
+  new Chart(chartCanvas, {
+    type: 'line',
+    data: { labels: trendLabels, datasets: [
+      { label: 'Matched', data: matchedTrend, borderColor: '#168477', backgroundColor: '#168477', tension: .35, borderWidth: 3 },
+      { label: 'Mismatch', data: mismatchTrend, borderColor: '#e5a336', backgroundColor: '#e5a336', tension: .35, borderWidth: 2 },
+      { label: 'Missing in GST', data: missingGstTrend, borderColor: '#d75b50', backgroundColor: '#d75b50', tension: .35, borderWidth: 2 },
+      { label: 'Missing in Books', data: missingBooksTrend, borderColor: '#6381a4', backgroundColor: '#6381a4', tension: .35, borderWidth: 2 }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eef2f3' } }, x: { grid: { display: false } } } }
+  });
+}
+</script>
+</body></html>

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reconciliation results</title><link rel="stylesheet" th:href="@{/styles.css}"><link rel="stylesheet" th:href="@{/readability.css(v=3)}"></head>
+<body>
+<header class="topbar"><a class="brand" th:href="@{/dashboard}">GST Reconciliation</a><nav class="nav-actions"><a th:href="@{/dashboard}">Dashboard</a><a th:href="@{/history}">Run history</a><a th:if="${isAdmin}" th:href="@{/admin/users}">Users</a><span class="user-chip" th:text="${currentUser}"></span><form method="post" th:action="@{/logout}"><button class="link-button" type="submit">Sign out</button></form></nav></header>
+<main class="container wide">
+  <div class="title-row"><div><p class="eyebrow">RUN <span th:text="${summary.runId}"></span></p><h1>Reconciliation results</h1><p class="muted"><span th:text="${summary.booksFile}"></span> · <span th:text="${summary.portalFile}"></span></p></div><a class="button secondary" th:href="@{/download/{id}(id=${summary.runId})}">Download Excel report</a></div>
+  <section class="cards">
+    <div class="card"><span>Matched</span><strong th:text="${summary.matched}"></strong></div><div class="card amber"><span>Mismatch</span><strong th:text="${summary.mismatch}"></strong></div><div class="card red"><span>Missing in GST</span><strong th:text="${summary.missingInGst}"></strong></div><div class="card"><span>Missing in Books</span><strong th:text="${summary.missingInBooks}"></strong></div><div class="card risk"><span>ITC at risk</span><strong th:text="${#numbers.formatDecimal(summary.itcAtRisk,1,'COMMA',2,'POINT')}"></strong></div>
+  </section>
+  <section class="panel" th:if="${!issues.isEmpty()}"><h2>Validation notes</h2><ul class="issues"><li th:each="issue : ${issues}" th:text="${issue}"></li></ul></section>
+  <section class="panel"><div class="title-row"><h2>Invoice details</h2><a th:href="@{/}">New run</a></div><div class="table-wrap"><table><thead><tr><th>Status</th><th>GSTIN</th><th>Supplier</th><th>Books invoice</th><th>Portal invoice</th><th>Books tax</th><th>Portal tax</th><th>Similarity</th><th>Remarks</th></tr></thead><tbody>
+    <tr th:each="r : ${results}"><td><span class="badge" th:classappend="${#strings.toLowerCase(r.status)}" th:text="${r.status}"></span></td><td th:text="${r.books != null ? r.books.gstin : r.portal.gstin}"></td><td th:text="${r.books != null ? r.books.supplierName : r.portal.supplierName}"></td><td th:text="${r.books != null ? r.books.invoiceNumber : '—'}"></td><td th:text="${r.portal != null ? r.portal.invoiceNumber : '—'}"></td><td th:text="${r.books != null ? #numbers.formatDecimal(r.books.totalTax(),1,'COMMA',2,'POINT') : '—'}"></td><td th:text="${r.portal != null ? #numbers.formatDecimal(r.portal.totalTax(),1,'COMMA',2,'POINT') : '—'}"></td><td th:text="${#numbers.formatDecimal(r.similarity,1,3)}"></td><td th:text="${r.remarks}"></td></tr>
+  </tbody></table></div></section>
+</main></body></html>

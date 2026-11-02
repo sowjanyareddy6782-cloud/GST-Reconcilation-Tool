@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GST Invoice Reconciliation</title><link rel="stylesheet" th:href="@{/styles.css}"><link rel="stylesheet" th:href="@{/readability.css(v=3)}">
+</head>
+<body>
+<header class="topbar"><a class="brand" th:href="@{/dashboard}">GST Reconciliation</a><nav class="nav-actions"><a th:href="@{/dashboard}">Dashboard</a><a th:href="@{/history}">Run history</a><a th:if="${isAdmin}" th:href="@{/admin/users}">Users</a><span class="user-chip" th:text="${currentUser}"></span><form method="post" th:action="@{/logout}"><button class="link-button" type="submit">Sign out</button></form></nav></header>
+<main class="container">
+  <section class="intro"><p class="eyebrow">PURCHASE REGISTER × GSTR-2B</p><h1>Find invoice differences before filing.</h1><p>Upload two files to match invoices, review tax differences, and identify Input Tax Credit at risk.</p></section>
+  <section class="panel">
+    <h2>Start a reconciliation</h2>
+    <p class="muted">Use .xlsx or .csv with these columns: GSTIN, Supplier Name, Invoice Number, Invoice Date, Taxable Value, IGST, CGST, SGST.</p>
+    <div class="alert error" th:if="${error}" th:text="${error}"></div>
+    <form method="post" th:action="@{/reconcile}" enctype="multipart/form-data">
+      <label for="books">Purchase register file <span>.xlsx or .csv, up to 20 MB</span></label><input id="books" name="books" type="file" accept=".xlsx,.csv" required>
+      <label for="portal">GSTR-2B file <span>.xlsx or .csv, up to 20 MB</span></label><input id="portal" name="portal" type="file" accept=".xlsx,.csv" required>
+      <button type="submit">Reconcile invoices</button>
+    </form>
+  </section>
+  <p class="note">This tool processes the supplied simplified template. It does not parse the full GST portal download format.</p>
+</main>
+</body></html>
